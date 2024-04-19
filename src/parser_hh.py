@@ -44,13 +44,21 @@ class HeadHunterAPI:
     :param Параметр для поиска: ключевое слово, количество вакансий в выводе(50), регион поиска(1575 - Пенза)
     """
     def __init__(self):
-        self.url = "https://api.hh.ru/vacancies/"
+        self.url = "https://api.hh.ru/employers/"
         self.headers = {"User-Agent": "HH-User-Agent"}
-        self.params = {"text": "", "page": 0, "per_page": 50, "area": 1575}
-        self.vacancies = []
+        self.params = {"text": "", "page": 0, "per_page": 10, "sort_by": "by_vacancies_open"}
+        self.employers = []
 
-    def load_vacancies(self, word: str):
+    def load_employers(self, word: str):
         self.params["text"] = word.lower()
         response = requests.get(self.url, headers=self.headers, params=self.params)
-        self.vacancies.extend(response.json()["items"])
-        return self.vacancies
+        self.employers.extend(response.json()["items"])
+        for item in self.employers:
+            print(item["name"], item["open_vacancies"], item["vacancies_url"])
+
+        # return self.employers
+
+        # self.params["text"] = word.lower()
+        # response = requests.get(self.url, headers=self.headers, params=self.params)
+        # self.vacancies.extend(response.json()["items"])
+        # return self.vacancies
