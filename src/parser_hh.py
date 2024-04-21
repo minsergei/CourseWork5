@@ -1,3 +1,5 @@
+import math
+
 import requests
 
 
@@ -40,25 +42,38 @@ class Parser:
 
 class HeadHunterAPI:
     """
-    Класс для получения данных о вакансиях с сайта hh.ru
-    :param Параметр для поиска: ключевое слово, количество вакансий в выводе(50), регион поиска(1575 - Пенза)
+    Класс для получения данных о работадателях и вакансиях с сайта hh.ru
+    :param Параметр для поиска: ключевое слово, количество вакансий в выводе(50), сортировка по кол-ву вакансий
+    количество страниц, количество выводимых результатов на странице
     """
     def __init__(self):
         self.url = "https://api.hh.ru/employers/"
         self.headers = {"User-Agent": "HH-User-Agent"}
-        self.params = {"text": "", "page": 0, "per_page": 10, "sort_by": "by_vacancies_open"}
+        self.params_employers = {"text": "", "page": 0, "per_page": 5, "sort_by": "by_vacancies_open"}
+        self.params_vacancies = {"page": 0, "per_page": 20}
         self.employers = []
+        self.employer_vacancies = []
 
     def load_employers(self, word: str):
-        self.params["text"] = word.lower()
-        response = requests.get(self.url, headers=self.headers, params=self.params)
+        self.params_employers["text"] = word.lower()
+        response = requests.get(self.url, headers=self.headers, params=self.params_employers)
         self.employers.extend(response.json()["items"])
+
         for item in self.employers:
-            print(item["name"], item["open_vacancies"], item["vacancies_url"])
+            vacancies = []
+            employer = (item["name"], item["open_vacancies"], item["vacancies_url"])
+            print(employer)
+            #определяем количество страниц, выставляю 10 максимум
+            count_page = math.ceil(int(item["open_vacancies"])/20)
+            if count_page > 10:
+                count_page = 10
 
-        # return self.employers
-
-        # self.params["text"] = word.lower()
-        # response = requests.get(self.url, headers=self.headers, params=self.params)
-        # self.vacancies.extend(response.json()["items"])
-        # return self.vacancies
+            while self.params_vacancies["page"] != count_page:
+                response_vacancies = requests.get(item["vacancies_url"], headers=self.headers,
+                                                  params=self.params_vacancies)
+                self.params_vacancies["page"] += 1
+                pars_hh = Parser(response_vacancies.json()["items"])
+                vacancies.extend(pars_hh.get_pars())
+            self.employer_vacancies.append({'employer': employer, 'vacancies': vacancies})
+            self.params_vacancies["page"] = 0
+        return self.employer_vacancies

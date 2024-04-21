@@ -1,36 +1,68 @@
-def get_filter_vacancies(data, keys_word: list):
-    """
-    Функция отбирает вакансии по ключевым словам в описании вакансии
-    """
-    filtered_vacancies = []
-    for item in data:
-        if item["snippet"]:
-            for item2 in keys_word:
-                if item2.lower() in item["snippet"].lower():
-                    filtered_vacancies.append(item)
-                    break
-    return filtered_vacancies
+import psycopg2
+from configparser import ConfigParser
+import os
 
 
-def get_ranged_vacancies(data, sal_range: str):
-    """
-    Функция выбирает вакансии, которые попадают в диапазон зарплат указанные пользователем
-    """
-    list_ranged_vacancies = []
-    str_sal_range = ''
-    for c in sal_range:
-        if c.isdigit():
-            str_sal_range += c
-        else:
-            str_sal_range += " "
-    salary = str_sal_range.split()
-    if len(salary) != 2 or int(salary[0]) > int(salary[1]):
-        raise TypeError("Введен не верный диапозон зарплат")
+def config(filename=os.path.abspath("../database.ini"), section="postgresql"):
+    # create a parser
+    parser = ConfigParser()
+    # read config file
+    parser.read(filename)
+    db = {}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            db[param[0]] = param[1]
     else:
-        for item in data:
-            if (((item["salary_from"] <= int(salary[0]) <= item["salary_to"] or
-                  item["salary_from"] <= int(salary[1]) <= item["salary_to"]) or
-                 int(salary[0]) <= item["salary_from"] <= int(salary[1])) or
-                    int(salary[0]) <= item["salary_to"] <= int(salary[1])):
-                list_ranged_vacancies.append(item)
-        return list_ranged_vacancies
+        raise Exception(
+            'Section {0} is not found in the {1} file.'.format(section, filename))
+    return db
+
+
+def create_database(database_name: str, params: dict):
+    """Создание базы данных и таблиц"""
+
+    conn = psycopg2.connect(dbname='postgres', **params)
+    conn.autocommit = True
+    cur = conn.cursor()
+
+    try:
+        cur.execute(f"DROP DATABASE {database_name}")
+    except Exception as e:
+        print(f'Информация: {e}, создадим ее заново')
+    # else:
+    # Исключений не произошло, БД дропнута
+    finally:
+        cur.execute(f"CREATE DATABASE {database_name}")
+
+    conn.close()
+
+    conn = psycopg2.connect(dbname=database_name, **params)
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE channels (
+                channel_id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                views INTEGER,
+                subscribers INTEGER,
+                videos INTEGER,
+                channel_url TEXT
+            )
+        """)
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE videos (
+                video_id SERIAL PRIMARY KEY,
+                channel_id INT REFERENCES channels(channel_id),
+                title VARCHAR NOT NULL,
+                publish_date DATE,
+                video_url TEXT
+            )
+        """)
+
+    conn.commit()
+    conn.close()
+
+create_database('datatest', config())
