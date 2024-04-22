@@ -6,20 +6,22 @@ import os.path
 
 def user_interaction():
     # Получаем вакансии с hh.ru. Изменяем данные под структуру !!!! и для создания объектов класса вакансии
-    # hh = HeadHunterAPI()
-    # search_query = input("Введите поисковый запрос: ")
-    # data_hh_api = hh.load_employers(search_query)
-    # create_database('hh_vacancy', config())
-    # save_data_to_database(data_hh_api, 'hh_vacancy', config())
+    hh = HeadHunterAPI()
+    search_query = input("Введите поисковый запрос: ")
+    data_hh_api = hh.load_employers(search_query)
+    create_database('hh_vacancy', config())
+    save_data_to_database(data_hh_api, 'hh_vacancy', config())
+
+    # Подключаемся к БД с помощью класса DBManager и используем его методы по заданию
     db = config(os.path.abspath('database.ini'))
     hh = DBManager('hh_vacancy', db)
-    # for i in (hh.get_companies_and_vacancies_count()):
-    #     print(i)
+    for i in (hh.get_companies_and_vacancies_count()):
+        print(i)
     print(len(hh.get_all_vacancies()))
     print(hh.get_avg_salary()[0][0])
     print(len(hh.get_vacancies_with_higher_salary()))
-    print(hh.get_vacancies_with_keyword('кадр'))
-
+    search_word = input("Введите поисковые слова(Например 'менеджер'): ")
+    print(hh.get_vacancies_with_keyword(search_word.lower()))
 
 
 if __name__ == "__main__":

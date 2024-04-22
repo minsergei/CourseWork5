@@ -5,6 +5,7 @@ import os
 
 
 def config(filename=os.path.abspath("database.ini"), section="postgresql"):
+    """Функция для чтения конфигурационнага файла и возвращает его в виде словаря"""
     # create a parser
     parser = ConfigParser()
     # read config file
@@ -69,7 +70,7 @@ def create_database(database_name: str, params: dict):
 
 
 def save_data_to_database(data: list[dict[str, Any]], database_name: str, params: dict):
-    """Сохранение данных о каналах и видео в базу данных."""
+    """Сохранение данных о работадателях и вакансиях в базу данных."""
 
     conn = psycopg2.connect(dbname=database_name, **params)
 
@@ -97,6 +98,3 @@ def save_data_to_database(data: list[dict[str, Any]], database_name: str, params
 
     conn.commit()
     conn.close()
-
-
-

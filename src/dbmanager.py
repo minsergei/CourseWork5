@@ -17,6 +17,10 @@ class DBManager:
         return result
 
     def get_all_vacancies(self):
+        """
+        получает список всех вакансий с указанием названия компании,
+        названия вакансии и зарплаты и ссылки на вакансию
+        """
         conn = psycopg2.connect(dbname=self.database_name, **self.params)
         conn.autocommit = True
         cur = conn.cursor()
@@ -27,6 +31,7 @@ class DBManager:
         return result
 
     def get_avg_salary(self):
+        """получает среднюю зарплату по вакансиям"""
         conn = psycopg2.connect(dbname=self.database_name, **self.params)
         conn.autocommit = True
         cur = conn.cursor()
@@ -36,6 +41,7 @@ class DBManager:
         return result
 
     def get_vacancies_with_higher_salary(self):
+        """получает список всех вакансий, у которых зарплата выше средней по всем вакансиям"""
         conn = psycopg2.connect(dbname=self.database_name, **self.params)
         conn.autocommit = True
         cur = conn.cursor()
@@ -47,10 +53,12 @@ class DBManager:
         return result
 
     def get_vacancies_with_keyword(self, word):
+        """получает список всех вакансий, в названии которых содержатся переданные в метод слова"""
         conn = psycopg2.connect(dbname=self.database_name, **self.params)
         conn.autocommit = True
         cur = conn.cursor()
-        cur.execute("SELECT employers.name_employer, name_vacancy, salary_from+salary_to/2 AS salary FROM vacancies	JOIN employers USING(employer_id) WHERE name_vacancy LIKE '%кадр%'")
+        cur.execute(f"SELECT employers.name_employer, name_vacancy, salary_from+salary_to/2 AS salary FROM vacancies "
+                    f"JOIN employers USING(employer_id) WHERE lower(name_vacancy) LIKE '%{word}%'")
         result = cur.fetchall()
         conn.close()
         return result

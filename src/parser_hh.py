@@ -56,18 +56,18 @@ class HeadHunterAPI:
         self.employer_vacancies = []
 
     def load_employers(self, word: str):
+        """Метол получает из API данные и создаёт словарь с работадателями и их вакансиями"""
         self.params_employers["text"] = word.lower()
         response = requests.get(self.url, headers=self.headers, params=self.params_employers)
-        self.employers.extend(response.json()["items"])
+        self.employers.extend(response.json()['items'])
 
         for item in self.employers:
             vacancies = []
             employer = (item["name"], item["open_vacancies"], item["vacancies_url"])
-            print(employer)
             # определяем количество страниц, выставляю 10 максимум
             count_page = math.ceil(int(item["open_vacancies"]) / 20)
-            if count_page > 20:
-                count_page = 20
+            if count_page > 10:
+                count_page = 10
 
             while self.params_vacancies["page"] != count_page:
                 response_vacancies = requests.get(item["vacancies_url"], headers=self.headers,
