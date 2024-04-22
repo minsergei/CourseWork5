@@ -1,5 +1,4 @@
 import math
-
 import requests
 
 
@@ -7,6 +6,7 @@ class Parser:
     """
     Класс обработки вакансий, полученных из API запроса. Позволяет создать экземпляры класса вакансии.
     """
+
     def __init__(self, file_vacancies: list):
         self.file_vacancies = file_vacancies
 
@@ -46,10 +46,11 @@ class HeadHunterAPI:
     :param Параметр для поиска: ключевое слово, количество вакансий в выводе(50), сортировка по кол-ву вакансий
     количество страниц, количество выводимых результатов на странице
     """
+
     def __init__(self):
         self.url = "https://api.hh.ru/employers/"
         self.headers = {"User-Agent": "HH-User-Agent"}
-        self.params_employers = {"text": "", "page": 0, "per_page": 5, "sort_by": "by_vacancies_open"}
+        self.params_employers = {"text": "", "page": 0, "per_page": 10, "sort_by": "by_vacancies_open"}
         self.params_vacancies = {"page": 0, "per_page": 20}
         self.employers = []
         self.employer_vacancies = []
@@ -63,10 +64,10 @@ class HeadHunterAPI:
             vacancies = []
             employer = (item["name"], item["open_vacancies"], item["vacancies_url"])
             print(employer)
-            #определяем количество страниц, выставляю 10 максимум
-            count_page = math.ceil(int(item["open_vacancies"])/20)
-            if count_page > 10:
-                count_page = 10
+            # определяем количество страниц, выставляю 10 максимум
+            count_page = math.ceil(int(item["open_vacancies"]) / 20)
+            if count_page > 20:
+                count_page = 20
 
             while self.params_vacancies["page"] != count_page:
                 response_vacancies = requests.get(item["vacancies_url"], headers=self.headers,

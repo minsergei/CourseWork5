@@ -1,9 +1,10 @@
+from typing import Any
 import psycopg2
 from configparser import ConfigParser
 import os
 
 
-def config(filename=os.path.abspath("../database.ini"), section="postgresql"):
+def config(filename=os.path.abspath("database.ini"), section="postgresql"):
     # create a parser
     parser = ConfigParser()
     # read config file
@@ -29,7 +30,7 @@ def create_database(database_name: str, params: dict):
     try:
         cur.execute(f"DROP DATABASE {database_name}")
     except Exception as e:
-        print(f'Информация: {e}, создадим ее заново')
+        print('Информация:', {e}, 'создадим ее')
     # else:
     # Исключений не произошло, БД дропнута
     finally:
@@ -41,28 +42,61 @@ def create_database(database_name: str, params: dict):
 
     with conn.cursor() as cur:
         cur.execute("""
-            CREATE TABLE channels (
-                channel_id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                views INTEGER,
-                subscribers INTEGER,
-                videos INTEGER,
-                channel_url TEXT
+            CREATE TABLE employers (
+                employer_id SERIAL PRIMARY KEY,
+                name_employer VARCHAR(255) NOT NULL,
+                open_vacancies INTEGER,
+                vacancies_url VARCHAR(255) NOT NULL
             )
         """)
 
     with conn.cursor() as cur:
         cur.execute("""
-            CREATE TABLE videos (
-                video_id SERIAL PRIMARY KEY,
-                channel_id INT REFERENCES channels(channel_id),
-                title VARCHAR NOT NULL,
-                publish_date DATE,
-                video_url TEXT
+            CREATE TABLE vacancies (
+                vacancy_id SERIAL PRIMARY KEY,
+                employer_id INT REFERENCES employers(employer_id),
+                name_vacancy VARCHAR NOT NULL,
+                experience VARCHAR,
+                salary_from INTEGER,
+                salary_to INTEGER,
+                snippet TEXT,
+                url_vacancy VARCHAR
             )
         """)
 
     conn.commit()
     conn.close()
 
-create_database('datatest', config())
+
+def save_data_to_database(data: list[dict[str, Any]], database_name: str, params: dict):
+    """Сохранение данных о каналах и видео в базу данных."""
+
+    conn = psycopg2.connect(dbname=database_name, **params)
+
+    with conn.cursor() as cur:
+        for employer in data:
+
+            cur.execute(
+                """
+                INSERT INTO employers (name_employer, open_vacancies, vacancies_url)
+                VALUES (%s, %s, %s)
+                RETURNING employer_id
+                """,
+                (employer['employer'][0], employer['employer'][1], employer['employer'][2]))
+            employer_id = cur.fetchone()[0]
+            vacancy_data = employer['vacancies']
+            for vacancy in vacancy_data:
+                cur.execute(
+                    """
+                    INSERT INTO vacancies (employer_id, name_vacancy, experience, salary_from, salary_to, snippet, url_vacancy)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (employer_id, vacancy['name'], vacancy['experience'], vacancy['salary_from'], vacancy['salary_to'],
+                     vacancy['snippet'], vacancy['url'])
+                )
+
+    conn.commit()
+    conn.close()
+
+
+
